@@ -32,14 +32,14 @@ jobs:
             suffix: ".exe"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
 
       - name: Build binary
-        working-directory: tools/somnog-cli
+        working-directory: tools
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
@@ -47,7 +47,7 @@ jobs:
         run: |
           OUTPUT="somnog-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.suffix }}"
           go build -ldflags="-s -w -X somnog-cli/cmd.Version=${{ github.ref_name }}" \
-            -o "../../dist/${OUTPUT}" .
+            -o "../dist/${OUTPUT}" .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -60,10 +60,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: dist/
           merge-multiple: true
