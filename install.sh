@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-REPO="SomNOG/somnog_cli"
+REPO="somnog/somnog-cli"
 BINARY="somnog"
 INSTALL_DIR="/usr/local/bin"
 
