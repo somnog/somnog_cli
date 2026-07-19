@@ -1,18 +1,20 @@
 package cmd
 
 import (
-    "fmt"
-    "os"
-    "path/filepath"
-    "strings"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
-    "github.com/spf13/cobra"
+	"github.com/spf13/cobra"
 )
 
 var generateCmd = &cobra.Command{
     Use:   "generate",
     Short: "Generate code for your project",
 }
+
+
 
 var generateResourceCmd = &cobra.Command{
     Use:   "resource [Name]",
@@ -55,53 +57,53 @@ func runGenerateResource(cmd *cobra.Command, args []string) {
     root := findProjectRoot()
 
     snake := toSnake(name)
-    plural := toPlural(name)
+    plural := toPlural(snake)
     lower := toLower(name)
     camel := toCamel(name)
 
     fmt.Printf("Generating resource: %s\n", name)
     fmt.Println()
 
-    goModelPath := filepath.Join(root, "apps", "api", "internal", "models", snake+".go")
+    goModelPath := filepath.Join(root, ModelsPath, snake+".go")
     writeFile(goModelPath, goModelTemplate(name, snake, plural, lower))
     fmt.Printf("  ✓  %s\n", relPath(root, goModelPath))
 
-    goSvcPath := filepath.Join(root, "apps", "api", "internal", "services", snake+"_service.go")
+    goSvcPath := filepath.Join(root, ServicesPath, snake+"_service.go")
     writeFile(goSvcPath, goServiceTemplate(name, snake, plural, lower))
     fmt.Printf("  ✓  %s\n", relPath(root, goSvcPath))
 
-    goHandlerPath := filepath.Join(root, "apps", "api", "internal", "handlers", snake+"_handler.go")
+    goHandlerPath := filepath.Join(root, HandlersPath, snake+"_handler.go")
     writeFile(goHandlerPath, goHandlerTemplate(name, snake, plural, lower, camel))
     fmt.Printf("  ✓  %s\n", relPath(root, goHandlerPath))
 
-    routesPath := filepath.Join(root, "apps", "api", "internal", "routes", "routes.go")
+    routesPath := filepath.Join(root, APIRoutesPath)
     injectRoutes(routesPath, name, snake, plural, lower, camel)
     fmt.Printf("  ✓  %s  (updated)\n", relPath(root, routesPath))
 
-    tsTypePath := filepath.Join(root, "packages", "shared", "types", lower+".ts")
+    tsTypePath := filepath.Join(root, TSTypesPath, lower+".ts")
     writeFile(tsTypePath, tsTypeTemplate(name))
     fmt.Printf("  ✓  %s\n", relPath(root, tsTypePath))
 
-    tsSchemaPath := filepath.Join(root, "packages", "shared", "schemas", lower+".ts")
+    tsSchemaPath := filepath.Join(root, TSSchemasPath, lower+".ts")
     writeFile(tsSchemaPath, tsSchemaTemplate(name))
     fmt.Printf("  ✓  %s\n", relPath(root, tsSchemaPath))
 
-    tsTypesIndex := filepath.Join(root, "packages", "shared", "types", "index.ts")
-    injectAtMarker(tsTypesIndex, "// somnog:types",
-        fmt.Sprintf("export type { %s } from \"./%s\";\n// somnog:types", name, lower))
+    tsTypesIndex := filepath.Join(root, TSTypesPath, "index.ts")
+    injectAtMarker(tsTypesIndex, MarkerTypes,
+        fmt.Sprintf("export type { %s } from \"./%s\";\n"+MarkerTypes, name, lower))
     fmt.Printf("  ✓  %s  (updated)\n", relPath(root, tsTypesIndex))
 
-    tsSchemasIndex := filepath.Join(root, "packages", "shared", "schemas", "index.ts")
-    injectAtMarker(tsSchemasIndex, "// somnog:schemas",
-        fmt.Sprintf("export {\n  %sSchema,\n  Create%sSchema,\n  Update%sSchema,\n  type Create%sInput,\n  type Update%sInput,\n} from \"./%s\";\n// somnog:schemas",
+    tsSchemasIndex := filepath.Join(root, TSSchemasPath, "index.ts")
+    injectAtMarker(tsSchemasIndex, MarkerSchemas,
+        fmt.Sprintf("export {\n  %sSchema,\n  Create%sSchema,\n  Update%sSchema,\n  type Create%sInput,\n  type Update%sInput,\n} from \"./%s\";\n"+MarkerSchemas,
             name, name, name, name, name, lower))
     fmt.Printf("  ✓  %s  (updated)\n", relPath(root, tsSchemasIndex))
 
-    adminResPath := filepath.Join(root, "apps", "admin", "resources", lower+".ts")
+    adminResPath := filepath.Join(root, AdminResPath, lower+".ts")
     writeFile(adminResPath, adminResourceTemplate(name, plural, lower))
     fmt.Printf("  ✓  %s\n", relPath(root, adminResPath))
 
-    adminResIndex := filepath.Join(root, "apps", "admin", "resources", "index.ts")
+    adminResIndex := filepath.Join(root, AdminResPath, "index.ts")
     injectAdminResource(adminResIndex, name, lower)
     fmt.Printf("  ✓  %s  (updated)\n", relPath(root, adminResIndex))
 
@@ -254,6 +256,7 @@ func (s *%sService) Delete(id string) error {
     )
 }
 
+
 func goHandlerTemplate(name, snake, plural, lower, camel string) string {
     _ = snake
     _ = camel
@@ -391,8 +394,8 @@ func (h *%sHandler) Delete(c *gin.Context) {
         name,
         lower,
         name,
-        name, // %s not found
-        name, // %s deleted successfully
+        name,
+        name,
     )
 }
 
@@ -475,25 +478,25 @@ func injectRoutes(path, name, snake, plural, lower, camel string) {
     }
     content := string(data)
 
-    handlerDecl := fmt.Sprintf("\t%sHandler := New%sHandler(db)\n\t// somnog:handlers", lower+"Handler", name)
-    content = strings.Replace(content, "\t// somnog:handlers", handlerDecl, 1)
+    handlerDecl := fmt.Sprintf("\t%sHandler := handlers.New%sHandler(db)\n\t"+MarkerHandlers, lower+"Handler", name)
+    content = strings.Replace(content, "\t"+MarkerHandlers, handlerDecl, 1)
 
     protectedRoutes := fmt.Sprintf(
-        "\t\tprotected.GET(\"/%s\", %sHandler.List)\n\t\tprotected.GET(\"/%s/:id\", %sHandler.GetByID)\n\t\t// somnog:routes:protected",
+        "\t\tprotected.GET(\"/%s\", %sHandler.List)\n\t\tprotected.GET(\"/%s/:id\", %sHandler.GetByID)\n\t\t"+MarkerRoutesProtected,
         plural, lower+"Handler",
         plural, lower+"Handler",
     )
-    content = strings.Replace(content, "\t\t// somnog:routes:protected", protectedRoutes, 1)
+    content = strings.Replace(content, "\t\t"+MarkerRoutesProtected, protectedRoutes, 1)
 
     adminRoutes := fmt.Sprintf(
-        "\t\tadmin.GET(\"/admin/%s\", %sHandler.List)\n\t\tadmin.GET(\"/admin/%s/:id\", %sHandler.GetByID)\n\t\tadmin.POST(\"/admin/%s\", %sHandler.Create)\n\t\tadmin.PUT(\"/admin/%s/:id\", %sHandler.Update)\n\t\tadmin.DELETE(\"/admin/%s/:id\", %sHandler.Delete)\n\t\t// somnog:routes:admin",
+        "\t\tadmin.GET(\"/admin/%s\", %sHandler.List)\n\t\tadmin.GET(\"/admin/%s/:id\", %sHandler.GetByID)\n\t\tadmin.POST(\"/admin/%s\", %sHandler.Create)\n\t\tadmin.PUT(\"/admin/%s/:id\", %sHandler.Update)\n\t\tadmin.DELETE(\"/admin/%s/:id\", %sHandler.Delete)\n\t\t"+MarkerRoutesAdmin,
         plural, lower+"Handler",
         plural, lower+"Handler",
         plural, lower+"Handler",
         plural, lower+"Handler",
         plural, lower+"Handler",
     )
-    content = strings.Replace(content, "\t\t// somnog:routes:admin", adminRoutes, 1)
+    content = strings.Replace(content, "\t\t"+MarkerRoutesAdmin, adminRoutes, 1)
 
     writeFileContent(path, content)
 }
@@ -521,11 +524,11 @@ func injectAdminResource(path, name, lower string) {
     }
     content := string(data)
 
-    importLine := fmt.Sprintf("import { %sResource } from \"./%s\";\n// somnog:resources", toCamel(name), lower)
-    content = strings.Replace(content, "// somnog:resources", importLine, 1)
+    importLine := fmt.Sprintf("import { %sResource } from \"./%s\";\n"+MarkerResources, toCamel(name), lower)
+    content = strings.Replace(content, MarkerResources, importLine, 1)
 
-    listEntry := fmt.Sprintf("  %sResource,\n  // somnog:resource-list", toCamel(name))
-    content = strings.Replace(content, "  // somnog:resource-list", listEntry, 1)
+    listEntry := fmt.Sprintf("  %sResource,\n  "+MarkerResourceList, toCamel(name))
+    content = strings.Replace(content, "  "+MarkerResourceList, listEntry, 1)
 
     writeFileContent(path, content)
 }

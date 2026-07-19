@@ -1,11 +1,12 @@
 package cmd
 
 import (
-    "fmt"
-    "os"
-    "path/filepath"
-    "strings"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 )
+
 
 func findProjectRoot() string {
     dir, err := os.Getwd()
@@ -13,7 +14,7 @@ func findProjectRoot() string {
         return "."
     }
     for {
-        if _, err := os.Stat(filepath.Join(dir, "somnog.config.ts")); err == nil {
+        if _, err := os.Stat(filepath.Join(dir, ProjectConfigFile)); err == nil {
             return dir
         }
         parent := filepath.Dir(dir)
@@ -25,6 +26,7 @@ func findProjectRoot() string {
         dir = parent
     }
 }
+
 
 func splitLines(s string) []string {
     return strings.Split(s, "\n")

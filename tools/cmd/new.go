@@ -1,11 +1,11 @@
 package cmd
 
 import (
-    "fmt"
-    "os"
-    "os/exec"
+	"fmt"
+	"os"
+	"os/exec"
 
-    "github.com/spf13/cobra"
+	"github.com/spf13/cobra"
 )
 
 var newCmd = &cobra.Command{
@@ -24,9 +24,9 @@ Example:
 
 var templateRepo string
 
+
 func init() {
-    newCmd.Flags().StringVar(&templateRepo, "template", "https://github.com/SomNOG/somnog.git", "Git repository to use as template")
-    rootCmd.AddCommand(newCmd)
+    newCmd.Flags().StringVar(&templateRepo, "template", DefaultTemplateRepo, "Git repository to use as template")
 }
 
 func runNew(cmd *cobra.Command, args []string) {
