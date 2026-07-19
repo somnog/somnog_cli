@@ -3,7 +3,7 @@ package cmd
 var Version = "1.0.0"
 
 const (
-    DefaultTemplateRepo = "https://github.com/SomNOG/somnog.git"
+    DefaultTemplateRepo = "https://github.com/somnog/somnog.git"
     ProjectConfigFile   = "somnog.config.ts"
     BinaryName          = "somnog"
 
