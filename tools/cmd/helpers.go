@@ -1,12 +1,44 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
+    "fmt"
+    "os"
+    "path/filepath"
+    "strings"
 )
 
+// ── ANSI colour helpers ──────────────────────────────────────────────────────
+
+const (
+    ansiReset  = "\033[0m"
+    ansiBold   = "\033[1m"
+    ansiPurple = "\033[35m"
+    ansiCyan   = "\033[36m"
+    ansiGreen  = "\033[32m"
+    ansiGray   = "\033[90m"
+    ansiYellow = "\033[33m"
+    ansiRed    = "\033[31m"
+)
+
+func colorPurple(s string) string { return ansiBold + ansiPurple + s + ansiReset }
+func colorCyan(s string) string   { return ansiCyan + s + ansiReset }
+func colorGreen(s string) string  { return ansiGreen + s + ansiReset }
+func colorGray(s string) string   { return ansiGray + s + ansiReset }
+func colorYellow(s string) string { return ansiYellow + s + ansiReset }
+func colorRed(s string) string    { return ansiRed + s + ansiReset }
+
+func printLogo() {
+    fmt.Println(colorPurple(`
+  ███████╗ ██████╗ ███╗   ███╗███╗   ██╗ ██████╗  ██████╗
+  ██╔════╝██╔═══██╗████╗ ████║████╗  ██║██╔═══██╗██╔════╝
+  ███████╗██║   ██║██╔████╔██║██╔██╗ ██║██║   ██║██║  ███╗
+  ╚════██║██║   ██║██║╚██╔╝██║██║╚██╗██║██║   ██║██║   ██║
+  ███████║╚██████╔╝██║ ╚═╝ ██║██║ ╚████║╚██████╔╝╚██████╔╝
+  ╚══════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═══╝ ╚═════╝  ╚═════╝`))
+    fmt.Println(colorGray(fmt.Sprintf("  Go full-stack framework. v%s\n", Version)))
+}
+
+// ── Project root detection ───────────────────────────────────────────────────
 
 func findProjectRoot() string {
     dir, err := os.Getwd()
@@ -19,14 +51,15 @@ func findProjectRoot() string {
         }
         parent := filepath.Dir(dir)
         if parent == dir {
-            fmt.Fprintln(os.Stderr, "Error: not inside a somnog project directory.")
-            fmt.Fprintln(os.Stderr, "Make sure you run this command from within your project.")
+            fmt.Fprintln(os.Stderr, colorRed("Error: not inside a somnog project directory."))
+            fmt.Fprintln(os.Stderr, colorGray("Make sure you run this command from within your project."))
             os.Exit(1)
         }
         dir = parent
     }
 }
 
+// ── String utilities ─────────────────────────────────────────────────────────
 
 func splitLines(s string) []string {
     return strings.Split(s, "\n")
@@ -73,4 +106,12 @@ func toCamel(s string) string {
         return s
     }
     return strings.ToLower(s[:1]) + s[1:]
+}
+
+func relPath(root, path string) string {
+    rel, err := filepath.Rel(root, path)
+    if err != nil {
+        return path
+    }
+    return rel
 }

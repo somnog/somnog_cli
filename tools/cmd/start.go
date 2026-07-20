@@ -72,32 +72,32 @@ var routesCmd = &cobra.Command{
 }
 
 func runInProject(name string, args ...string) {
-    root := findProjectRoot()
-    runInDir(root, name, args...)
+	root := findProjectRoot()
+	runInDir(root, name, args...)
 }
 
 func runInDir(dir string, name string, args ...string) {
-    c := exec.Command(name, args...)
-    c.Dir = dir
-    c.Stdin = os.Stdin
-    c.Stdout = os.Stdout
-    c.Stderr = os.Stderr
+	c := exec.Command(name, args...)
+	c.Dir = dir
+	c.Stdin = os.Stdin
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
 
-    sigs := make(chan os.Signal, 1)
-    signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-    go func() {
-        for sig := range sigs {
-            if c.Process != nil {
-                _ = c.Process.Signal(sig)
-            }
-        }
-    }()
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		for sig := range sigs {
+			if c.Process != nil {
+				_ = c.Process.Signal(sig)
+			}
+		}
+	}()
 
-    if err := c.Run(); err != nil {
-        if exitErr, ok := err.(*exec.ExitError); ok {
-            os.Exit(exitErr.ExitCode())
-        }
-        fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-        os.Exit(1)
-    }
+	if err := c.Run(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			os.Exit(exitErr.ExitCode())
+		}
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 }
